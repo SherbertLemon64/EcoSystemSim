@@ -8,6 +8,9 @@ using Random = UnityEngine.Random;
 
 public class Movement : MonoBehaviour
 {
+    public AnimalLogic Parent;
+    
+
     public Rigidbody rb;
     public float Speed = 5f;
     private Transform transformCache;
@@ -15,8 +18,6 @@ public class Movement : MonoBehaviour
     private Vector3 startRotation;
     
     public float Rotation;
-
-    public NeuralNetwork nn;
 
     public float RotationSpeed;
 
@@ -30,8 +31,6 @@ public class Movement : MonoBehaviour
         startPos = transform.position;
         startRotation = transform.eulerAngles;
         Rotation = transformCache.eulerAngles.y;
-
-        nn = new NeuralNetwork(new[] {10, 10, 10, 2});
     }
 
     public void ResetPosition()
@@ -46,15 +45,18 @@ public class Movement : MonoBehaviour
         Vector3 forward = transformCache.forward;
         
         // code
-        RaycastHit[] rays = SendRays(10, 230, Color.green);
-        float[] rayLengths = new float[rays.Length];
+        RaycastHit[] rays = SendRays(6, 230);
+        float[] rayLengths = new float[rays.Length * 2 + 1];
 
-        for (int i = 0; i < rays.Length; i++)
+        for (int i = 0; i < rays.Length * 2 - 1; i+=2)
         {
             rayLengths[i] = rays[i].distance;
+            rayLengths[i + 1] = rays[i].collider.gameObject.layer;
         }
 
-        Vector<float> output = nn.Predict(rayLengths);
+        rayLengths[rayLengths.Length - 1] = Parent.Energy;
+        
+        Vector<float> output = Parent.nn.Predict(rayLengths);
 
         right = output[0];
         left = output[1];
@@ -63,7 +65,6 @@ public class Movement : MonoBehaviour
         
         rb.velocity = new Vector3(forward.x * Speed, rb.velocity.y, forward.z * Speed);
         transformCache.eulerAngles = new Vector3(0,Rotation,0);
-        
     }
     
 
@@ -90,12 +91,12 @@ public class Movement : MonoBehaviour
         float eachAngle = _angles / _rayAmount;
         float offset = -(_angles / 2) + Rotation;
         RaycastHit[] rays = new RaycastHit[_rayAmount];
-        
-        
+
         for (int i = 0; i < _rayAmount; i++)
         {
             var dir = Quaternion.Euler(new Vector3(0, i * eachAngle + eachAngle / 2 + offset, 0)) * Vector3.forward;
-            Physics.Raycast(transformCache.position, dir, out rays[i]);
+            Physics.Raycast(transform.position, dir, out rays[i]);
+
         }
 
         return rays;
@@ -108,7 +109,10 @@ public class Movement : MonoBehaviour
 
         foreach (RaycastHit ray in rays)
         {
-            Debug.DrawLine(transformCache.position, ray.point, _debugColor);
+            if (ray.point == Vector3.zero)
+            {
+                Debug.DrawLine(transform.position, ray.point, _debugColor);
+            }
         }
 
         return rays;

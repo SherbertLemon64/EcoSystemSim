@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using Data.Util;
 using UnityEngine;
 
-namespace UnityTemplateProjects
-{
+
 	public class LearningController : MonoBehaviour
 	{
 		public Vector2Int size;
@@ -42,17 +41,16 @@ namespace UnityTemplateProjects
 		
 		public static void ResetWorlds(Movement FinalMovement)
 		{
-			NeuralNetwork BaseNet = FinalMovement.nn;
+			NeuralNetwork BaseNet = FinalMovement.Parent.nn;
 			AliveAnimalsObjects.Remove(FinalMovement);
 			
 			foreach (Movement a in Animals)
 			{
 				a.ResetPosition();
-				a.nn = new NeuralNetwork(BaseNet);
+				a.Parent.nn = new NeuralNetwork(BaseNet);
 				a.gameObject.SetActive(true);
 				AliveAnimalsObjects.Add(a);
 			}
 		}
 		
 	}
-}
